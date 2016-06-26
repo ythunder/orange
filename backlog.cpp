@@ -24,7 +24,7 @@ static void handle_term(int sig)
 
 int main(int argc, char *argv[])
 {
-	sinal(SIGTERM, handle_term);  
+	signal(SIGTERM,handle_term);  
 
 	if(argc <= 3) {
 		printf ("usage:%s ip_address port_number ", basename(argv[0]));
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	bzero ( &address, sizeof(address) );
 	address.sin_family = AF_INET;
 	inet_pton(AF_INET, ip, &address.sin_addr);
-	address.sin_port = hton( port );
+	address.sin_port = htons( port );
 
 	//套接字绑定地址族
 	int ret = bind(sock, (struct sockaddr*)&address, sizeof(address));
