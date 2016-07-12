@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in client;
 	socklen_t client_addrlength = sizeof(client);
 	int connfd = accept(sock, (struct sockaddr* )&client, &client_addrlength);  //client用于获取被接受连接的远端socket地址
-	if(connfd > 0) {
+	if(connfd < 0) {
 		printf("errno is:%d\n", errno);
 	} else {
 		char buffer[BUF_SIZE];
