@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define BUF_SIZE 1024
+#define BUFFER_SIZE 1024
 
 int main(int argc, char *argv[])
 {
@@ -35,6 +35,14 @@ int main(int argc, char *argv[])
 	int sock = socket(PF_INET, SOCK_STREAM, 0);
 	assert(socket >= 0);
 
+	int recvbuf = atoi(argv[3]);
+	int len = sizeof(recvbuf);
+
+	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, sizeof(recvbuf));
+	getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, (socklen_t* )&len);
+	printf("the tcp reeive bufeer szie after setting is %d\n", recvbuf);
+
+
 	int ret = bind(sock, (struct sockaddr* )&address, sizeof(address) );
 	assert(ret != -1);
 
@@ -43,26 +51,16 @@ int main(int argc, char *argv[])
 
 	struct sockaddr_in client;
 	socklen_t client_addrlength = sizeof(client);
-	int connfd = accept(sock, (struct sockaddr* )&client, &client_addrlength);  //client用于获取被接受连接的远端socket地址
+	int connfd = accept(sock, (struct sockaddr* )&client, &client_addrlength); //client用于获取被接受连接的远端socket地址
 	if(connfd < 0) {
-		printf("errno is:%d\n", errno);
+		printf("errno is :%d\n", errno);
 	} else {
-		char buffer[BUF_SIZE];
-		memset(buffer, '\0', BUF_SIZE);
-		ret = recv(connfd, buffer, BUF_SIZE-1, 0);
-		printf("got %d bytes of normal data '%s'\n", ret, buffer);
-
-		memset(buffer, '\0', BUF_SIZE);
-		ret = recv(connfd, buffer, BUF_SIZE-1, MSG_OOB);
-		printf("got %d bytes of oob data '%s'\n", ret, buffer);
-
-		memset(buffer, '\0', BUF_SIZE);
-		ret = recv(connfd, buffer, BUF_SIZE-1, 0);
-		printf("got %d bytes of oob data '%s'\n", ret, buffer);
-		
+		char buffer[BUFFER_SIZE];
+		memset(buffer, 'a', BUFFER_SIZE);
+		while(recv(connfd, buffer, BUFFER_SIZE-1, 0) > 0) {}
 		close(connfd);
 	}
-
 	close(sock);
-	return 0;
+
+		return 0;
 }

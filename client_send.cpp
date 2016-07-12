@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#denfine BUFFER_SIZE 512
+#define BUFFER_SIZE 512
 
 int main(int argc, char *argv[])
 {
