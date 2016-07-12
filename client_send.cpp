@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#denfine BUFFER_SIZE 512
 
 int main(int argc, char *argv[])
 {
@@ -30,18 +31,21 @@ int main(int argc, char *argv[])
 	inet_pton(AF_INET, ip, &server_address.sin_addr);
 	server_address.sin_port = htons(port);
 	
-	int sockfd = socket(PF_INET, SOCK_STREAM, 0);
+	int sock = socket(PF_INET, SOCK_STREAM, 0);
 	assert(socket >= 0);
 
-	if(connect(sockfd, (struct sockaddr* )&server_address, sizeof(server_address)) < 0) {
-		printf("connection failed\n");
-	} else {
-		const char* oob_data = "adc";
-		const char* normal_data = "123";
-		send(sockfd, normal_data, strlen(normal_data), 0);
-		send(sockfd, oob_data, strlen(oob_data), MSG_OOB);
-		send(sockfd, normal_data, strlen(normal_data), 0);
+	int sendbuf = atoi(argv[3]);
+	int len = sizeof(sendbuf);
+
+	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sendbuf, sizeof(sendbuf) );
+	getsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sendbuf, (socklen_t* )&len );
+	printf("the tcp send buffer size after setting is %d\n", sendbuf);
+
+	if(connect(sock, (struct sockaddr* )&server_address, sizeof(server_address)) != -1) {
+		char buffer[BUFFER_SIZE];
+		memset(buffer, 'a', BUFFER_SIZE);
+		send(sock, buffer, BUFFER_SIZE, 0);
 	}
-	close(sockfd);
+	close(sock);
 	return 0;
 }
