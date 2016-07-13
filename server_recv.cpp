@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, sizeof(recvbuf));
 	getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, (socklen_t* )&len);
-	printf("the tcp reeive bufeer szie after setting is %d\n", recvbuf);
+	printf("the tcp receive buffer size after setting is %d\n", recvbuf);
 
 
 	int ret = bind(sock, (struct sockaddr* )&address, sizeof(address) );

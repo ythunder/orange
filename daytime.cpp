@@ -27,10 +27,10 @@ int main(int argc, char *argv[])
 	address.sin_family = AF_INET;
 	address.sin_port = servinfo->s_port;
 
-	address.sin_addr = (struct in_addr *)hostinfo->h_addr_list;
+	address.sin_addr = *(struct in_addr *)*hostinfo->h_addr_list;
 
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	int result = connet(sockfd, (struct sockaddr *)&address, sizeof(address));
+	int result = connect(sockfd, (struct sockaddr *)&address, sizeof(address));
 	assert(result != -1);
 
 	char buffer[128];
