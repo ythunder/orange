@@ -35,14 +35,6 @@ int main(int argc, char *argv[])
 	int sock = socket(PF_INET, SOCK_STREAM, 0);
 	assert(socket >= 0);
 
-	int recvbuf = atoi(argv[3]);
-	int len = sizeof(recvbuf);
-
-	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, sizeof(recvbuf));
-	getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recvbuf, (socklen_t* )&len);
-	printf("the tcp receive buffer size after setting is %d\n", recvbuf);
-
-
 	int ret = bind(sock, (struct sockaddr* )&address, sizeof(address) );
 	assert(ret != -1);
 
@@ -54,13 +46,46 @@ int main(int argc, char *argv[])
 	int connfd = accept(sock, (struct sockaddr* )&client, &client_addrlength); //client用于获取被接受连接的远端socket地址
 	if(connfd < 0) {
 		printf("errno is :%d\n", errno);
-	} else {
-		char buffer[BUFFER_SIZE];
-		memset(buffer, 'a', BUFFER_SIZE);
-		while(recv(connfd, buffer, BUFFER_SIZE-1, 0) > 0) {}
-		close(connfd);
+		close(sock);
 	}
-	close(sock);
+	
 
-		return 0;
+	char buf[1024];
+	fd_set read_fds;
+	fd_set exception_fds;
+	FD_ZERO( &read_fds );    
+	FD_ZERO( &exception );
+
+	while(1) 
+	{
+		memset(buf, '\0', sizeof(buf));
+
+		FD_SET(connfd, &read_fds);     //将connfd加入read_fds集合
+		FD_SET(connfd, &exception_fds);
+
+		ret = select(connfd+1, &read_fds, NULL, &exception_fd, NULL);
+		assert(ret != -1);
+
+		if(FD_ISSET(connfd, &read_fds)) 
+		{
+			ret = recv(connfd, buf, sizeof(buf)-1, 0);
+			if(ret < 0) 
+			{
+				break;
+			}
+			printf("get %d bytes of normal data:%s\n",ret ,buf);
+		}
+		else if(FD_ISSET(connfd, &exception)) 
+		{
+			ret = recv(connfd, buf, sizeof(buf)-1, MSG_OOB);
+			if(ret <= 0) 
+			{
+				break;
+			}
+			printf("get %d bytes of obb data: %s\n", ret, buf);
+		}
+	}
+	close(connfd);
+	close(sock);
+	return 0;
 }
