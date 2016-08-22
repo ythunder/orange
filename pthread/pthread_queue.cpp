@@ -14,7 +14,6 @@
 using namespace std;
 
 template<typename T>
-
 class SyncQueue
 {
 public:
@@ -24,7 +23,7 @@ public:
     }
 
     /*添加事件，左值拷贝和右值引用*/
-    void Put( cinst T&x )
+    void Put( const T&x )
     {
         /*调用private内部接口Add*/
         Add( x );
@@ -36,7 +35,7 @@ public:
     }
 
     /*从队列中取事件*/
-    void Take( std::list<T> &list )
+    void Take( T &t)
     {
         std::unique_lock<std::mutex>   locker(m_mutex);
         //满足条件则唤醒
@@ -50,23 +49,49 @@ public:
     }
 
     /*取一个线程*/
-    void Take( T &t )
+    void Take( std::list<T> &list )
     {
         std::unique_lock<std::mutex> locker(m_mutex);
-        m_notEmpty.wait( locker, [this]{return m_needStop || NotEmpty()} );
+        m_notEmpty.wait( locker, [this]{return m_needStop || NotEmpty(); } );
         if(m_needStop)
         return ;
         list = std::move(m_queue);
         m_notFull.notify_one();   
     }
 
+    /*停止所有线程在同步队列中的读取*/
     void Stop()
     {
         {
-
+            std::lock_guard<std::mutex> locker(m_mutex);
+            m_needStop = true;
         }
+        m_notFull.notify_all();
+        m_notEmpty.notify_all();
     }
 
+    bool Empty()
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        return m_queue.empty();
+    }
+
+    bool full()
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        return m_queue.size == m_maxSize;
+    }
+
+    size_t Size()
+    {
+        std::lock_guard<std::mutex> locker(m_mutex);
+        return m_queue.size();
+    }
+
+    int Count()
+    {
+        return m_queue.size();
+    }
 
 private:
 
@@ -86,14 +111,13 @@ private:
     {
         bool empty = m_queue.empty();
         if( empty )
-        {
-            cout << "缓冲区空了，需要等待...，异步层的线程ID："
-            cout << "线程ID：" << std::this_thread:;get_id() << endl; 
+        {         
+            cout << "缓冲区空了，需要等待...异步层线程ID：" << std::this_thread::get_id() << endl; 
         }
         return !empty;
     }
 
-    template<typename T>
+    template<typename F>
     void Add( F &&x )
     {
         std::unique_lock<std::mutex> locker(m_mutex);
@@ -102,7 +126,7 @@ private:
         {
             return ;
         }
-        m_queue.push_back(std:;forward<F>(x));  //条件满足，像队列添加事件
+        m_queue.push_back(std::forward<F>(x));  //条件满足，像队列添加事件
         m_notEmpty.notify_one();   //唤等待的工作线程
     }
 private:
@@ -112,4 +136,4 @@ private:
     std::condition_variable m_notFull;   //没有满的条件变量
     int m_maxSize;            //同步队列最大的size
     bool m_needStop;          //停止的标志
-};
+    };
